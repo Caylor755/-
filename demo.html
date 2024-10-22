@@ -365,7 +365,6 @@
         function initGame() {
             updateUI();
             generateNews();
-            document.getElementById('stock-market').addEventListener('scroll', handleStockMarketScroll);
         }
 
         // 更新UI
@@ -383,13 +382,8 @@
         function updateStockMarket() {
             const stockTable = document.getElementById('stock-table');
             stockTable.innerHTML = '<tr><th>公司</th><th>当前价格</th><th>买入价格</th><th>持有股数</th><th>操作</th></tr>';
-            
-            const companies = Object.entries(stockData);
-            const start = (currentPage - 1) * companiesPerPage;
-            const end = start + companiesPerPage;
-            const pageCompanies = companies.slice(start, end);
 
-            for (const [company, data] of pageCompanies) {
+            for (const [company, data] of Object.entries(stockData)) {
                 const row = stockTable.insertRow();
                 const buyPrice = gameState.buyPrices[company] ? gameState.buyPrices[company].toFixed(2) : '-';
                 row.innerHTML = `
@@ -403,7 +397,7 @@
                     </td>
                 `;
             }
-        }
+}
 
         function handleStockMarketScroll() {
             const stockMarket = document.getElementById('stock-market');
