@@ -2,237 +2,717 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>7天股市100万</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>亏钱谁不会？</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+        #game-container {
+            width: 750px;
+            height: 1334px;
+            border: 1px solid #2c3e50;
+            background-color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
         }
-        .top-bar {
-            background-color: #333;
-            color: white;
+        .header {
+            background-color: #34495e;
+            color: #ecf0f1;
             padding: 10px;
             display: flex;
             justify-content: space-between;
         }
-        .tab-container {
-            display: flex;
-            margin-top: 20px;
-        }
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            background-color: #ddd;
-            cursor: pointer;
-        }
-        .tab.active {
-            background-color: #fff;
-        }
         .content {
-            background-color: white;
-            padding: 20px;
-            margin-top: 20px;
-            min-height: 300px; /* 确保内容区域有最小高度 */
-        }
-        .stock-list, .news-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        .stock-list li, .news-list li {
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #f9f9f9;
-        }
-        .bottom-bar {
-            background-color: #333;
-            color: white;
+            flex-grow: 1;
             display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            margin-top: 20px;
+            flex-direction: column;
         }
-        .bottom-bar span {
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background-color: #ecf0f1;
+            color: #34495e;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .tab-button:hover {
+            background-color: #bdc3c7;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: #ffffff;
+            border-bottom: 2px solid #2980b9;
+        }
+        .tab-content {
+            display: none;
+            padding: 10px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #my-stocks {
+            background-color: #e8f6fd;
+            padding: 10px;
+            border-top: 1px solid #bdc3c7;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+        .footer {
+            background-color: #34495e;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #ecf0f1;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
         }
-        .toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            display: none;
+        .close:hover,
+        .close:focus {
+            color: #2c3e50;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #stock-market {
+            height: 400px;
+            overflow-y: auto;
+        }
+        #stock-table {
+            width: 100%;
+        }
+        #stock-table th {
+            position: sticky;
+            top: 0;
+            background-color: #3498db;
+            color: #ffffff;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="top-bar">
-            <span id="day">第1天</span>
-            <span id="money">余额: 1000000元</span>
+    <div id="game-container">
+        <div class="header">
+            <span id="profit-loss">盈亏: 0元</span>
+            <span id="day-display">第1天</span>
+            <span id="balance">余额: 1000000元</span>
         </div>
-        
-        <div class="tab-container">
-            <div class="tab active" onclick="showContent('ranking')">排行榜</div>
-            <div class="tab" onclick="showContent('stock')">股市</div>
-            <div class="tab" onclick="showContent('news')">新闻</div>
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab(event, 'ranking')">排行榜</button>
+                <button class="tab-button" onclick="openTab(event, 'stock-market')">股市</button>
+                <button class="tab-button" onclick="openTab(event, 'news')">新闻</button>
+            </div>
+            <div id="ranking" class="tab-content active">
+                <h3>排行榜</h3>
+                <ol id="ranking-list">
+                    <!-- 排行榜将通过JavaScript动态更新 -->
+                </ol>
+            </div>
+            <div id="stock-market" class="tab-content">
+                <h3>股市</h3>
+                <table id="stock-table">
+                    <tr>
+                        <th>公司</th>
+                        <th>当前价格</th>
+                        <th>买入价格</th>
+                        <th>持有股数</th>
+                        <th>操作</th>
+                    </tr>
+                    <!-- 股票列表将通过JavaScript动态更新 -->
+                </table>
+            </div>
+            <div id="news" class="tab-content">
+                <h3>新闻</h3>
+                <div id="settlement-news">
+                    <h4>昨日新闻结算</h4>
+                    <ul id="settlement-news-list">
+                        <!-- 结算新闻将在这里动态更新 -->
+                    </ul>
+                </div>
+                <div id="current-news">
+                    <h4>今日新闻</h4>
+                    <ul id="current-news-list">
+                        <!-- 当前新闻将在这里动态更新 -->
+                    </ul>
+                </div>
+            </div>
         </div>
-        
-        <div id="content" class="content">
-            <!-- 内容将通过JavaScript动态填充 -->
+        <div id="my-stocks">
+            <h3>我的股票</h3>
+            <table id="my-stock-table">
+                <tr>
+                    <th>公司</th>
+                    <th>持有股数</th>
+                    <th>操作</th>
+                </tr>
+                <!-- 玩家持有的股票将通过JavaScript动态更新 -->
+            </table>
         </div>
-        
-        <div class="bottom-bar">
-            <span onclick="showDialog('loan')">贷款</span>
-            <span onclick="nextDay()">下一天</span>
-            <span onclick="showDialog('analysis')">分析</span>
+        <div class="footer">
+            <button onclick="takeLoan()">贷款</button>
+            <button onclick="nextDay()">下一天</button>
+            <button onclick="consume()">消费</button>
         </div>
     </div>
 
-    <div id="toast" class="toast"></div>
+    <!-- 贷款模态框 -->
+    <div id="loanModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeLoanModal()">&times;</span>
+            <h2>选择贷款金额</h2>
+            <div id="loanOptions"></div>
+        </div>
+    </div>
+
+    <!-- 消费/打工模态框 -->
+    <div id="actionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeActionModal()">&times;</span>
+            <h2>选择行动</h2>
+            <button id="consumeButton" onclick="performAction('consume')">消费 (-10000)</button>
+            <button id="workButton" onclick="performAction('work')">打工 (+5000)</button>
+        </div>
+    </div>
+
+    <!-- 买入/卖出模态框 -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTradeModal()">&times;</span>
+            <h2 id="tradeModalTitle">买入/卖出股票</h2>
+            <div id="tradeOptions"></div>
+        </div>
+    </div>
+
+    <!-- 每日新闻模态框 -->
+<div id="dailyNewsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeDailyNewsModal()">&times;</span>
+        <h2>今日新闻</h2>
+        <ul id="daily-news-list"></ul>
+        <button onclick="closeDailyNewsModal()">确定</button>
+    </div>
+</div>
 
     <script>
-        let money = 1000000;
-        let day = 1;
-        const maxDays = 7;
-        const stocks = {
-            'A公司': { price: 100, amount: 0 },
-            'B公司': { price: 50, amount: 0 },
-            'C公司': { price: 200, amount: 0 }
+        // 游戏状态
+        let gameState = {
+            day: 1,
+            balance: 1000000,
+            stocks: {},
+            buyPrices: {},
+            news: {
+                current: [],
+                settlement: []
+            },
+            initialBalance: 1000000,
+            totalProfit: 0
         };
-        const news = [
-            'A公司业绩大涨',
-            'B公司收购C公司',
-            '全球经济形势良好',
-            'C公司CEO辞职'
-        ];
 
-        function showContent(tab) {
-            const content = document.getElementById('content');
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+        let currentPage = 1;
+        const companiesPerPage = 10;
 
-            switch(tab) {
-                case 'ranking':
-                    content.innerHTML = '<h2>排行榜</h2><ul class="stock-list"><li>玩家1: 1500000元</li><li>玩家2: 1200000元</li><li>你: ' + money + '元</li></ul>';
-                    break;
-                case 'stock':
-                    let stockHtml = '<h2>股市</h2><ul class="stock-list">';
-                    for (let stock in stocks) {
-                        stockHtml += `<li>${stock}: ${stocks[stock].price}元 (持有: ${stocks[stock].amount}) 
-                            <button onclick="buyStock('${stock}')">买入</button> 
-                            <button onclick="sellStock('${stock}')">卖出</button></li>`;
+        // 股票数据
+        const stockData = {
+            // 医药行业
+            "康泰生物": { price: 120, industry: "生物制药" },
+            "华兴医药": { price: 85, industry: "生物制药" },
+            "仁和药业": { price: 45, industry: "生物制药" },
+            "迈瑞医疗": { price: 310, industry: "医疗器械" },
+            "新华医疗": { price: 78, industry: "医疗器械" },
+            "泰康在线": { price: 56, industry: "医疗服务" },
+            "平安好医生": { price: 92, industry: "医疗服务" },
+            // 消费行业
+            "伊利股份": { price: 33, industry: "食品消费" },
+            "海天味业": { price: 115, industry: "食品消费" },
+            "格力电器": { price: 58, industry: "家用消费" },
+            "美的集团": { price: 72, industry: "家用消费" },
+            "携程旅行": { price: 280, industry: "服务消费" },
+            "美团点评": { price: 210, industry: "服务消费" },
+            // 科技行业
+            "宁德时代": { price: 420, industry: "新能源" },
+            "比亚迪": { price: 230, industry: "新能源" },
+            "中芯国际": { price: 55, industry: "芯片电子" },
+            "韦尔股份": { price: 180, industry: "芯片电子" },
+            "腾讯控股": { price: 550, industry: "软件互联网" },
+            "阿里巴巴": { price: 260, industry: "软件互联网" },
+            "小米集团": { price: 25, industry: "工业制造" },
+            "海尔智家": { price: 30, industry: "工业制造" },
+            // 金融行业
+            "工商银行": { price: 5.5, industry: "银行" },
+            "建设银行": { price: 7.2, industry: "银行" },
+            "中国平安": { price: 80, industry: "保险" },
+            "中国人寿": { price: 35, industry: "保险" },
+            "中信证券": { price: 28, industry: "证券" },
+            "华泰证券": { price: 22, industry: "证券" },
+            // 地产建筑行业
+            "万科企业": { price: 28, industry: "地产" },
+            "碧桂园": { price: 12, industry: "地产" },
+            "中国建筑": { price: 5.8, industry: "基建" },
+            "中国中铁": { price: 6.5, industry: "基建" }
+        };
+
+        // 新闻池
+        const newsPool = {
+            global: [
+                "全球经济增长放缓,各国央行考虑降息",
+                "国际贸易摩擦加剧,市场观望情绪浓厚",
+                "新的国际贸易协定签署,有望促进经济发展",
+                "全球气候变化加剧,各国承诺减少碳排放"
+            ],
+            tech: [
+                "某大型科技公司宣布重大技术突破",
+                "5G技术全面铺开,通信行业迎来新机遇",
+                "人工智能在医疗领域取得突破性进展",
+                "量子计算研究获得重大进展,或将改变计算机行业"
+            ],
+            finance: [
+                "央行宣布降息,股市应声上涨",
+                "某大型银行传出内部管理问题,股价大跌",
+                "金融科技公司融资成功,估值创新高",
+                "加密货币市场波动剧烈,监管政策存在不确定性"
+            ],
+            pharma: [
+                "新冠疫苗研发取得重大突破,制药股普涨",
+                "某知名药企药品被曝出严重副作用,股价暴跌",
+                "生物技术在癌症治疗领域取得新进展",
+                "医疗改革政策出台,医药行业面临洗牌"
+            ],
+            consumer: [
+                "节日消费季来临,零售业有望迎来开门红",
+                "某知名品牌陷入质量门,消费者信心受挫",
+                "新型消费模式兴起,传统零售业受冲击",
+                "食品安全问题再次引发关注,相关企业股价下跌"
+            ],
+            realestate: [
+                "房地产调控政策收紧,一线城市房价下跌",
+                "新型城镇化规划出台,二三线城市房地产市场升温",
+                "商业地产项目受疫情影响,空置率上升",
+                "绿色建筑概念兴起,环保建材企业受益"
+            ]
+        };
+
+        // 新增贷款和行动状态
+        let loanState = {
+            totalLimit: 3000000,
+            usedAmount: 0
+        };
+
+        let actionState = {
+            canConsume: true,
+            canWork: true
+        };
+
+        // 初始化游戏
+        function initGame() {
+            updateUI();
+            generateNews();
+            document.getElementById('stock-market').addEventListener('scroll', handleStockMarketScroll);
+        }
+
+        // 更新UI
+        function updateUI() {
+            document.getElementById('day-display').textContent = `第${gameState.day}天`;
+            document.getElementById('balance').textContent = `余额: ${gameState.balance.toFixed(2)}元`;
+            document.getElementById('profit-loss').textContent = `盈亏: ${gameState.totalProfit.toFixed(2)}元`;
+            updateStockMarket();
+            updateMyStocks();
+            updateRanking();
+            updateNews();
+        }
+
+        // 更新股票市场
+        function updateStockMarket() {
+            const stockTable = document.getElementById('stock-table');
+            stockTable.innerHTML = '<tr><th>公司</th><th>当前价格</th><th>买入价格</th><th>持有股数</th><th>操作</th></tr>';
+            
+            const companies = Object.entries(stockData);
+            const start = (currentPage - 1) * companiesPerPage;
+            const end = start + companiesPerPage;
+            const pageCompanies = companies.slice(start, end);
+
+            for (const [company, data] of pageCompanies) {
+                const row = stockTable.insertRow();
+                const buyPrice = gameState.buyPrices[company] ? gameState.buyPrices[company].toFixed(2) : '-';
+                row.innerHTML = `
+                    <td>${company}</td>
+                    <td>${data.price.toFixed(2)}元</td>
+                    <td>${buyPrice}元</td>
+                    <td>${gameState.stocks[company] || 0}股</td>
+                    <td>
+                        <button onclick="buyStock('${company}')">买入</button>
+                        <button onclick="sellStock('${company}')">卖出</button>
+                    </td>
+                `;
+            }
+        }
+
+        function handleStockMarketScroll() {
+            const stockMarket = document.getElementById('stock-market');
+            if (stockMarket.scrollTop + stockMarket.clientHeight >= stockMarket.scrollHeight - 20) {
+                if (currentPage * companiesPerPage < Object.keys(stockData).length) {
+                    currentPage++;
+                    updateStockMarket();
+                }
+            }
+        }
+
+        // 更新我的股票
+        function updateMyStocks() {
+            const myStockTable = document.getElementById('my-stock-table');
+            myStockTable.innerHTML = '<tr><th>公司</th><th>持有股数</th><th>操作</th></tr>';
+            for (const [company, shares] of Object.entries(gameState.stocks)) {
+                if (shares > 0) {
+                    const row = myStockTable.insertRow();
+                    row.innerHTML = `
+                        <td>${company}</td>
+                        <td>${shares}股</td>
+                        <td>
+                            <button onclick="buyStock('${company}')">买入</button>
+                            <button onclick="sellStock('${company}')">卖出</button>
+                        </td>
+                    `;
+                }
+            }
+        }
+
+        // 更新排行榜（这里只是示例，实际游戏中可能需要与服务器交互）
+        function updateRanking() {
+            const rankingList = document.getElementById('ranking-list');
+            rankingList.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                const li = document.createElement('li');
+                li.textContent = `玩家${i}: ${1000000 + Math.floor(Math.random() * 1000000)}元`;
+                rankingList.appendChild(li);
+            }
+        }
+
+        // 更新新闻
+        function updateNews() {
+            const currentNewsList = document.getElementById('current-news-list');
+            const settlementNewsList = document.getElementById('settlement-news-list');
+            
+            currentNewsList.innerHTML = gameState.news.current.map(news => `<li>${news}</li>`).join('');
+            settlementNewsList.innerHTML = gameState.news.settlement.map(news => `<li>${news}</li>`).join('');
+        }
+
+        // 生成新闻
+        function generateNews() {
+            const allNews = Object.values(newsPool).flat();
+            const newsCount = Math.floor(Math.random() * 3) + 2; // 每天2-4条新闻
+            gameState.news.current = [];
+            
+            for (let i = 0; i < newsCount; i++) {
+                const randomIndex = Math.floor(Math.random() * allNews.length);
+                gameState.news.current.push(allNews[randomIndex]);
+            }
+        }
+
+        // 买入股票
+        function buyStock(company) {
+            openTradeModal('buy', company);
+        }
+
+        // 卖出股票
+        function sellStock(company) {
+            openTradeModal('sell', company);
+        }
+
+        // 打开交易模态框
+        function openTradeModal(action, company) {
+            const modal = document.getElementById('tradeModal');
+            const title = document.getElementById('tradeModalTitle');
+            const options = document.getElementById('tradeOptions');
+            const price = stockData[company].price;
+            const balance = gameState.balance;
+            const maxShares = action === 'buy' ? Math.floor(balance / price) : (gameState.stocks[company] || 0);
+
+            title.textContent = action === 'buy' ? `买入 ${company} 股票` : `卖出 ${company} 股票`;
+            options.innerHTML = '';
+
+            const fractions = [
+                { name: "1/5仓", fraction: 1/5 },
+                { name: "1/4仓", fraction: 1/4 },
+                { name: "1/3仓", fraction: 1/3 },
+                { name: "1/2仓", fraction: 1/2 },
+                { name: "2/3仓", fraction: 2/3 },
+                { name: "全仓", fraction: 1 }
+            ];
+
+            fractions.forEach(({ name, fraction }) => {
+                const shares = Math.floor(maxShares * fraction);
+                const cost = shares * price;
+                const button = document.createElement('button');
+                button.textContent = `${name} (${shares}股, ${cost.toFixed(2)}元)`;
+                button.onclick = () => executeTrade(action, company, shares);
+                options.appendChild(button);
+            });
+
+            modal.style.display = 'block';
+        }
+
+        // 执行交易
+        function executeTrade(action, company, shares) {
+            const price = stockData[company].price;
+            const cost = shares * price;
+
+            if (action === 'buy') {
+                if (cost <= gameState.balance) {
+                    gameState.balance -= cost;
+                    gameState.stocks[company] = (gameState.stocks[company] || 0) + shares;
+                    // 更新买入价格
+                    if (!gameState.buyPrices[company]) {
+                        gameState.buyPrices[company] = price;
+                    } else {
+                        // 计算新的平均买入价格
+                        const totalShares = gameState.stocks[company];
+                        const oldCost = (totalShares - shares) * gameState.buyPrices[company];
+                        const newCost = oldCost + cost;
+                        gameState.buyPrices[company] = newCost / totalShares;
                     }
-                    stockHtml += '</ul>';
-                    content.innerHTML = stockHtml;
-                    break;
-                case 'news':
-                    let newsHtml = '<h2>新闻</h2><ul class="news-list">';
-                    news.forEach(item => {
-                        newsHtml += `<li>${item}</li>`;
-                    });
-                    newsHtml += '</ul>';
-                    content.innerHTML = newsHtml;
-                    break;
-            }
-        }
-
-        function showDialog(action) {
-            switch(action) {
-                case 'loan':
-                    showToast('贷款功能暂未实现');
-                    break;
-                case 'analysis':
-                    showToast('分析功能暂未实现');
-                    break;
-            }
-        }
-
-        function buyStock(stock) {
-            const amount = parseInt(prompt(`请输入要购买的${stock}数量：`));
-            if (isNaN(amount) || amount <= 0) {
-                showToast('请输入有效的数量');
-                return;
-            }
-            const cost = amount * stocks[stock].price;
-            if (cost > money) {
-                showToast('资金不足');
+                } else {
+                    alert("余额不足!");
+                    return;
+                }
             } else {
-                money -= cost;
-                stocks[stock].amount += amount;
-                updateUI();
-                showToast(`成功购买${amount}股${stock}`);
+                gameState.balance += cost;
+                gameState.stocks[company] -= shares;
+                // 如果卖出所有股票，清除买入价格
+                if (gameState.stocks[company] === 0) {
+                    delete gameState.buyPrices[company];
+                }
             }
+
+            updateTotalProfit();
+            updateUI();
+            closeTradeModal();
         }
 
-        function sellStock(stock) {
-            const amount = parseInt(prompt(`请输入要卖出的${stock}数量：`));
-            if (isNaN(amount) || amount <= 0) {
-                showToast('请输入有效的数量');
-                return;
-            }
-            if (amount > stocks[stock].amount) {
-                showToast('持有股票不足');
-            } else {
-                money += amount * stocks[stock].price;
-                stocks[stock].amount -= amount;
-                updateUI();
-                showToast(`成功卖出${amount}股${stock}`);
-            }
+        // 关闭交易模态框
+        function closeTradeModal() {
+            document.getElementById('tradeModal').style.display = 'none';
         }
 
+        // 更新总盈亏
+        function updateTotalProfit() {
+            let currentTotalValue = gameState.balance - loanState.usedAmount; // 减去贷款金额
+            for (const [company, shares] of Object.entries(gameState.stocks)) {
+                currentTotalValue += shares * stockData[company].price;
+            }
+            gameState.totalProfit = currentTotalValue - gameState.initialBalance;
+        }
+
+        // 贷款
+        function takeLoan() {
+            const loanOptions = [500000, 1000000, 2000000, 3000000];
+            const availableOptions = loanOptions.filter(amount => amount <= (loanState.totalLimit - loanState.usedAmount));
+            
+            const loanOptionsDiv = document.getElementById('loanOptions');
+            loanOptionsDiv.innerHTML = '';
+            
+            availableOptions.forEach(amount => {
+                const button = document.createElement('button');
+                button.textContent = `${amount / 10000}万`;
+                button.onclick = () => {
+                    loanState.usedAmount += amount;
+                    gameState.balance += amount;
+                    updateUI(); // 不更新总盈亏
+                    closeLoanModal();
+                };
+                loanOptionsDiv.appendChild(button);
+            });
+
+            if (availableOptions.length === 0) {
+                loanOptionsDiv.innerHTML = '<p>贷款额度已用完</p>';
+            }
+
+            document.getElementById('loanModal').style.display = 'block';
+        }
+
+        function closeLoanModal() {
+            document.getElementById('loanModal').style.display = 'none';
+        }
+
+        // 消费/打工
+        function consume() {
+            document.getElementById('actionModal').style.display = 'block';
+            document.getElementById('consumeButton').disabled = !actionState.canConsume;
+            document.getElementById('workButton').disabled = !actionState.canWork;
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').style.display = 'none';
+        }
+
+        function performAction(action) {
+            if (action === 'consume' && actionState.canConsume) {
+                if (gameState.balance >= 10000) {
+                    gameState.balance -= 10000;
+                    actionState.canConsume = false;
+                } else {
+                    alert("余额不足!");
+                }
+            } else if (action === 'work' && actionState.canWork) {
+                gameState.balance += 5000;
+                actionState.canWork = false;
+            }
+            updateTotalProfit();
+            updateUI();
+            closeActionModal();
+        }
+
+        // 进入下一天
         function nextDay() {
-            if (day < maxDays) {
-                day++;
-                updateStockPrices();
+            if (gameState.day < 10) {
+                gameState.day++;
+                // 生成新的新闻
+                gameState.news.settlement = gameState.news.current;
+                generateNews();
+                // 显示每日新闻弹窗
+                showDailyNewsModal();
+                // 根据新闻影响股票价格
+                for (const news of gameState.news.current) {
+                    for (const [company, data] of Object.entries(stockData)) {
+                        let priceChange = 0;
+                        if (news.includes(data.industry) || news.toLowerCase().includes(company.toLowerCase())) {
+                            priceChange = (Math.random() - 0.3) * 0.1; // -3% 到 +7% 的变化
+                        } else {
+                            priceChange = (Math.random() - 0.5) * 0.05; // -2.5% 到 +2.5% 的变化
+                        }
+                        data.price *= (1 + priceChange);
+                        data.price = Math.round(data.price * 100) / 100; // 保留两位小数
+                    }
+                }
+                // 重置消费和打工状态
+                actionState.canConsume = true;
+                actionState.canWork = true;
+                updateTotalProfit();
                 updateUI();
-                showToast(`进入第${day}天`);
             } else {
                 endGame();
             }
         }
 
-        function updateStockPrices() {
-            for (let stock in stocks) {
-                const change = (Math.random() - 0.5) * 20;
-                stocks[stock].price = Math.max(1, stocks[stock].price + change);
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('day').textContent = `第${day}天`;
-            document.getElementById('money').textContent = `余额: ${money.toFixed(2)}元`;
-            showContent(document.querySelector('.tab.active').textContent.toLowerCase());
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.style.display = 'block';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 2000);
-        }
-
+        // 结束游戏
         function endGame() {
-            showToast('游戏结束！');
-            alert(`游戏结束！\n你的最终资产：${money.toFixed(2)}元`);
+            // 自动卖出所有股票
+            for (const [company, shares] of Object.entries(gameState.stocks)) {
+                if (shares > 0) {
+                    const earnings = shares * stockData[company].price;
+                    gameState.balance += earnings;
+                    gameState.stocks[company] = 0;
+                }
+            }
+
+            // 偿还贷款
+            if (loanState.usedAmount > 0) {
+                if (gameState.balance >= loanState.usedAmount) {
+                    gameState.balance -= loanState.usedAmount;
+                    loanState.usedAmount = 0;
+                } else {
+                    // 如果余额不足以偿还贷款，将余额清零，剩余贷款作为负债
+                    loanState.usedAmount -= gameState.balance;
+                    gameState.balance = 0;
+                }
+            }
+
+            updateTotalProfit();
+            updateUI();
+
+            // 显示游戏结束信息
+            let endMessage = `游戏结束！\n最终余额: ${gameState.balance.toFixed(2)}元\n总盈亏: ${gameState.totalProfit.toFixed(2)}元`;
+            if (loanState.usedAmount > 0) {
+                endMessage += `\n未偿还贷款: ${loanState.usedAmount.toFixed(2)}元`;
+            }
+            alert(endMessage);
+
+            // 禁用所有操作按钮
+            document.querySelectorAll('button').forEach(button => button.disabled = true);
         }
 
-        // 初始化显示排行榜
-        showContent('ranking');
+        // 切换标签页
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            const tabButtons = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        function showDailyNewsModal() {
+            const dailyNewsList = document.getElementById('daily-news-list');
+            dailyNewsList.innerHTML = gameState.news.current.map(news => `<li>${news}</li>`).join('');
+            document.getElementById('dailyNewsModal').style.display = 'block';
+        }
+
+        function closeDailyNewsModal() {
+            document.getElementById('dailyNewsModal').style.display = 'none';
+        }
+
+        // 初始化游戏
+        initGame();
     </script>
 </body>
 </html>
