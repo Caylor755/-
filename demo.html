@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7天股市100万</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .top-bar {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .tab-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background-color: #ddd;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: #fff;
+        }
+        .content {
+            background-color: white;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 300px; /* 确保内容区域有最小高度 */
+        }
+        .stock-list, .news-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .stock-list li, .news-list li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .bottom-bar {
+            background-color: #333;
+            color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .bottom-bar span {
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <span id="day">第1天</span>
+            <span id="money">余额: 1000000元</span>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tab active" onclick="showContent('ranking')">排行榜</div>
+            <div class="tab" onclick="showContent('stock')">股市</div>
+            <div class="tab" onclick="showContent('news')">新闻</div>
+        </div>
+        
+        <div id="content" class="content">
+            <!-- 内容将通过JavaScript动态填充 -->
+        </div>
+        
+        <div class="bottom-bar">
+            <span onclick="showDialog('loan')">贷款</span>
+            <span onclick="nextDay()">下一天</span>
+            <span onclick="showDialog('analysis')">分析</span>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let money = 1000000;
+        let day = 1;
+        const maxDays = 7;
+        const stocks = {
+            'A公司': { price: 100, amount: 0 },
+            'B公司': { price: 50, amount: 0 },
+            'C公司': { price: 200, amount: 0 }
+        };
+        const news = [
+            'A公司业绩大涨',
+            'B公司收购C公司',
+            '全球经济形势良好',
+            'C公司CEO辞职'
+        ];
+
+        function showContent(tab) {
+            const content = document.getElementById('content');
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            switch(tab) {
+                case 'ranking':
+                    content.innerHTML = '<h2>排行榜</h2><ul class="stock-list"><li>玩家1: 1500000元</li><li>玩家2: 1200000元</li><li>你: ' + money + '元</li></ul>';
+                    break;
+                case 'stock':
+                    let stockHtml = '<h2>股市</h2><ul class="stock-list">';
+                    for (let stock in stocks) {
+                        stockHtml += `<li>${stock}: ${stocks[stock].price}元 (持有: ${stocks[stock].amount}) 
+                            <button onclick="buyStock('${stock}')">买入</button> 
+                            <button onclick="sellStock('${stock}')">卖出</button></li>`;
+                    }
+                    stockHtml += '</ul>';
+                    content.innerHTML = stockHtml;
+                    break;
+                case 'news':
+                    let newsHtml = '<h2>新闻</h2><ul class="news-list">';
+                    news.forEach(item => {
+                        newsHtml += `<li>${item}</li>`;
+                    });
+                    newsHtml += '</ul>';
+                    content.innerHTML = newsHtml;
+                    break;
+            }
+        }
+
+        function showDialog(action) {
+            switch(action) {
+                case 'loan':
+                    showToast('贷款功能暂未实现');
+                    break;
+                case 'analysis':
+                    showToast('分析功能暂未实现');
+                    break;
+            }
+        }
+
+        function buyStock(stock) {
+            const amount = parseInt(prompt(`请输入要购买的${stock}数量：`));
+            if (isNaN(amount) || amount <= 0) {
+                showToast('请输入有效的数量');
+                return;
+            }
+            const cost = amount * stocks[stock].price;
+            if (cost > money) {
+                showToast('资金不足');
+            } else {
+                money -= cost;
+                stocks[stock].amount += amount;
+                updateUI();
+                showToast(`成功购买${amount}股${stock}`);
+            }
+        }
+
+        function sellStock(stock) {
+            const amount = parseInt(prompt(`请输入要卖出的${stock}数量：`));
+            if (isNaN(amount) || amount <= 0) {
+                showToast('请输入有效的数量');
+                return;
+            }
+            if (amount > stocks[stock].amount) {
+                showToast('持有股票不足');
+            } else {
+                money += amount * stocks[stock].price;
+                stocks[stock].amount -= amount;
+                updateUI();
+                showToast(`成功卖出${amount}股${stock}`);
+            }
+        }
+
+        function nextDay() {
+            if (day < maxDays) {
+                day++;
+                updateStockPrices();
+                updateUI();
+                showToast(`进入第${day}天`);
+            } else {
+                endGame();
+            }
+        }
+
+        function updateStockPrices() {
+            for (let stock in stocks) {
+                const change = (Math.random() - 0.5) * 20;
+                stocks[stock].price = Math.max(1, stocks[stock].price + change);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('day').textContent = `第${day}天`;
+            document.getElementById('money').textContent = `余额: ${money.toFixed(2)}元`;
+            showContent(document.querySelector('.tab.active').textContent.toLowerCase());
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+
+        function endGame() {
+            showToast('游戏结束！');
+            alert(`游戏结束！\n你的最终资产：${money.toFixed(2)}元`);
+        }
+
+        // 初始化显示排行榜
+        showContent('ranking');
+    </script>
+</body>
+</html>
